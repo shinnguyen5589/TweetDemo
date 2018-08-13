@@ -8,6 +8,7 @@
 
 // BUILDER
 protocol MainBuilderProtocol: BaseBuilderProtocol {
+    //
 }
 
 // WIREFRAME
@@ -19,8 +20,6 @@ protocol MainWireframeProtocol: BaseWireframeProtocol {
 protocol MainViewProtocol: BaseViewProtocol {  // Conformed by View
     ///
     var presenter: MainPresenterInputProtocol? { get set } // strong reference
-    
-    func reload()
 }
 
 // PRESENTER
@@ -32,16 +31,17 @@ protocol MainPresenterInputProtocol: BasePresenterProtocol { // Conformed by Pre
     
     func viewDidLoad()
     
-    func didTapTweetButton()
     var numberOfItems: Int { get }
-    
-    func attachView(_ view: MainPresenterOutputProtocol & MainViewProtocol)
     func getItem(atIndex index: Int) -> String?
-    func appendMessages(_ items: [String])
+    func insertMessages(_ items: [String])
+    
+    /// IBActions
+    func didTapTweetButton()
+    func didTapAvatarIcon()
 }
 
 protocol MainPresenterOutputProtocol { // Conformed by View
-    /// Event of IBAction in view
+    func reload()
 }
 
 // INTERACTOR
@@ -51,5 +51,5 @@ protocol MainInteractorInputProtocol: BaseInteractorProtocol { // Conformed by I
 }
 
 protocol MainInteractorOutputProtocol: class { // Conformed by Presenter
-    
+    //
 }

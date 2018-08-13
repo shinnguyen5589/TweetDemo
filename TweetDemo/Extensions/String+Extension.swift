@@ -7,9 +7,7 @@
 //
 
 extension String {
-    // Extension method to remove redundante whitespaces inside a string
-    func removingRedundantWhitespaces() -> String {
-        let components = self.components(separatedBy: .whitespacesAndNewlines)
-        return components.filter({ !$0.isEmpty }).joined(separator: " ")
+    public func trim() -> String {
+        return self.trimmingCharacters(in: CharacterSet.whitespaces)
     }
 }

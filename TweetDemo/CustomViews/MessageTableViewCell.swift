@@ -6,13 +6,12 @@
 //  Copyright © 2018 Fossil. All rights reserved.
 //
 
-class MessageTableViewCell: UITableViewCell {
-    static var IDENTIFIER: String {
-        return "MessageTableViewCellID"
-    }
+class MessageTableViewCell: BaseTableViewCell {
+    
+     override open class var CELL_IDENTIFIER: String { return "MessageTableViewCellID" }
     
     // Label to display message
-    private let label: UILabel = {
+    private let _label: UILabel = {
         let view = UILabel()
         view.textColor = .black
         view.font = UIFont.systemFont(ofSize: 15)
@@ -21,37 +20,24 @@ class MessageTableViewCell: UITableViewCell {
         return view
     }()
     
-    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        
-        setUpView()
-        setUpLayout()
+    override func setupViews() {
+        self.backgroundColor = UIColor.white
+        self.contentView.addSubview(self._label)
     }
     
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    private func setUpView() {
-        backgroundColor = .white
-        
-        contentView.addSubview(label)
-    }
-    
-    private func setUpLayout() {
-        label.snp.remakeConstraints { (make) in
-            make.leading.equalToSuperview().offset(10)
-            make.trailing.equalToSuperview().offset(-10)
+    override func setupLayout() {
+        self._label.snp.remakeConstraints { (make) in
+            make.center.equalToSuperview()
+            make.leading.equalToSuperview().offset(20)
             make.top.equalToSuperview().offset(10)
-            make.bottom.equalToSuperview().offset(-10)
         }
     }
     
     func configure(with message: String?) {
-        label.text = message
+        self._label.text = message
     }
     
     override func prepareForReuse() {
-        label.text = ""
+        self._label.text = ""
     }
 }

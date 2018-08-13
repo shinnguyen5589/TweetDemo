@@ -1,5 +1,5 @@
 //
-//  UIViewController+Extensions.swift
+//  UIViewController+Extension.swift
 //  TweetDemo
 //
 //  Created by Dung Nguyen Hoang on 8/13/18.

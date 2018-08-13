@@ -6,4 +6,25 @@
 //  Copyright © 2018 Fossil. All rights reserved.
 //
 
-import Foundation
+open class BaseViewController: UIViewController {
+    
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        
+        self.setupViews()
+        self.setupLayout()
+        self.setUpNavigationBar()
+    }
+    
+    open func setupViews() {
+        //
+    }
+    
+    open func setupLayout() {
+        //
+    }
+    
+    open func setUpNavigationBar() {
+        //
+    }
+}

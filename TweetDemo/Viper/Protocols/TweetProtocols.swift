@@ -26,9 +26,6 @@ protocol TweetViewProtocol: BaseViewProtocol {  // Conformed by View
     var presenter: TweetPresenterInputProtocol? { get set } // strong reference
     
     var delegate: TweetViewDelegate? { get set } // must be weak reference
-    
-    func displayError(_ error: DisplayedError)
-    func didPostMessages(_ messages: [String])
 }
 
 // PRESENTER
@@ -40,14 +37,14 @@ protocol TweetPresenterInputProtocol: BasePresenterProtocol { // Conformed by Pr
     
     func viewDidLoad()
     
+    /// IBActions
     func didTapCloseButton()
     func didTapTweetButton(with text: String)
-    
-    func attachView(_ view: TweetPresenterOutputProtocol & TweetViewProtocol)
 }
 
 protocol TweetPresenterOutputProtocol { // Conformed by View
-    /// Event of IBAction in view
+    func displayError(_ error: DisplayedError)
+    func didPostMessages(_ messages: [String])
 }
 
 // INTERACTOR
@@ -57,5 +54,5 @@ protocol TweetInteractorInputProtocol: BaseInteractorProtocol { // Conformed by 
 }
 
 protocol TweetInteractorOutputProtocol: class { // Conformed by Presenter
-    
+    //
 }

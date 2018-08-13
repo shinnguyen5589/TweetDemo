@@ -11,37 +11,33 @@ class MainPresenter: MainPresenterInputProtocol {
     var wireframe: MainWireframeProtocol?
     var interactor: MainInteractorInputProtocol?
     
+    private(set) var messages = [String]()
+    
     func viewDidLoad() {
         //
     }
     
-    private(set) var messages = [String]()
-    
-    open var numberOfItems: Int {
-        return messages.count
+    // MARK: MainPresenterInputProtocol
+    var numberOfItems: Int {
+        return self.messages.count
     }
     
-    open func attachView(_ view: MainPresenterOutputProtocol & MainViewProtocol) {
-        self.view = view
-    }
-    
-    open func getItem(atIndex index: Int) -> String? {
-        if index < numberOfItems {
-            return messages[index]
+    func getItem(atIndex index: Int) -> String? {
+        if index < self.numberOfItems {
+            return self.messages[index]
         }
         
         return nil
     }
     
-    // To call once receive didPostMessages from coordinator
-    open func appendMessages(_ items: [String]) {
+    func insertMessages(_ items: [String]) {
         // Do nothing when appending an empty array
         if items.count == 0 {
             return
         }
         
-        // Append to list of messages and reload view
-        messages.append(contentsOf: items)
+        // Insert to list of messages and reload view
+        self.messages.insert(contentsOf: items, at: 0)
         
         // Reload view on the main queue
         DispatchQueue.main.async {
@@ -49,10 +45,15 @@ class MainPresenter: MainPresenterInputProtocol {
         }
     }
     
+    /// IBActions
     func didTapTweetButton() {
         if let view = self.view {
             self.wireframe?.showTweetView(from: view)
         }
+    }
+    
+    func didTapAvatarIcon() {
+        // TODO: -
     }
 }
 

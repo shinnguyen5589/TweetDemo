@@ -21,10 +21,6 @@ class TweetPresenter: TweetPresenterInputProtocol {
         self.messageSplitter = messageSplitter
     }
     
-    open func attachView(_ view: TweetViewProtocol & TweetPresenterOutputProtocol) {
-        self.view = view
-    }
-    
     private func dismissSelf() {
         if let view = self.view as? UIViewController {
             view.navigationController?.dismiss(animated: true, completion: nil)

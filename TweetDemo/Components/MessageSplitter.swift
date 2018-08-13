@@ -35,31 +35,9 @@ class MessageSplitter: MessageSplittable {
         self.maxChunkLength = maxChunkLength
     }
     
-    private func numberOfIndicatorCharacters(forChunkCount chunkCount: Int) -> Int {
-        var copyOfChunkCount = chunkCount
-        
-        // A chunk's part indicator has 2 parts:
-        // Left part contains numerical order of chunk & "/"
-        // Right part contains chunk count & a whitespace in front of chunk's content
-        var leftPartCharacters = 0
-        while copyOfChunkCount > 0 {
-            // For example, chunk count is 999 -> we have to count number of characters representing left part of indicator
-            // from 100 -> 999, then 10 -> 99, then 1 -> 9
-            let n = copyOfChunkCount.numberOfDigits
-            let start = Int(pow(10.0, Double(n - 1)))
-            leftPartCharacters += (copyOfChunkCount - start + 1) * (start.numberOfDigits + 1)
-            
-            copyOfChunkCount = start - 1
-        }
-        
-        let rightPartCharacters = chunkCount * (chunkCount.numberOfDigits + 1)
-        let characters = leftPartCharacters + rightPartCharacters
-        return characters
-    }
-    
     func splitMessage(_ message: String) -> MessageSplittingResult {
-        // Before we start, make sure the message is polished by removing redundante whitespaces
-        let actualMessage = message.removingRedundantWhitespaces()
+        // Before we start, make sure the message is polished by trimming spaces in the first and last
+        let actualMessage = message.trim()
         let length = actualMessage.count
         
         // The message is empty after polishing, return an error
@@ -67,70 +45,102 @@ class MessageSplitter: MessageSplittable {
             return .failure(MessageSplittingError.emptyOrWhitespacesOnlyMessage)
         }
         
-        // We don't need to split if the message is shorter than max length
+        // We do not need to split if the message is shorter than max length
         if length <= self.maxChunkLength {
             return .success([actualMessage])
         }
         
+        // Start to split
+        var chunks = [String]()
+        
         // Before splitting message, we should estimate chunk count first
         // Dont forget to include part indicator length while estimating
-        var estimatedChunkCount = length / maxChunkLength + 1
-        let indicatorLength = numberOfIndicatorCharacters(forChunkCount: estimatedChunkCount)
-        estimatedChunkCount = (length + indicatorLength) / maxChunkLength + 1
+        var totalMessages: Int = Int(ceil(Double(actualMessage.count) / Double(self.maxChunkLength)))
+        var indicatorLength: Int = totalMessages.numberOfDigits
+        let words = actualMessage.split(separator: " ")
         
-        // Well, let's split the message as requirement
-        var chunks = [String]()
-        let words = actualMessage.split(separator: " ").map({ String($0) })
-        var i = 0
-        var currentChunk = ""
-        let wordCount = words.count
-        var index = 1
-        while i < wordCount {
-            let word = words[i]
-            // If any word in the message is combined with the part indicator to be a chunk is longer than max length, return an error
-            // Content of chunk is built following the format: "[index of chunk]/[chunk count] [content]"
-            if word.count + index.numberOfDigits + estimatedChunkCount.numberOfDigits + 2 > maxChunkLength {
+        // Start to calculate
+        var realTotalMessages: Int = 0
+        var isValidMessage: Bool = false
+        
+        // Loop to find valid indicatorLength.
+        // Ex: 1/50 --> 1 is message index and 50 is indicator length
+        while isValidMessage == false {
+            // Compute first trunk
+            var messageIndex: Int = 1
+            var messageLength: Int = String(messageIndex).count + 1 + indicatorLength + 1 + words[0].count
+            if messageLength > self.maxChunkLength {
                 return .failure(MessageSplittingError.containsTooLongWord)
             }
             
-            // We'll try to build a valid chunk by joining every word until chunk's length exceeds the limit
-            var currentChunkToWord: String = ""
-            if currentChunk.isEmpty {
-                currentChunkToWord = currentChunk.appending(word)
-            } else {
-                currentChunkToWord = currentChunk.appending(" \(word)")
-            }
+            var shouldBreakWhileLoop: Bool = false
+            realTotalMessages = 1
             
-            // To reviewer: I'm not really sure about that :|
-            // We want to put as many words as possible so let's remove the 1-character reservation here
-            let chunkLength = currentChunkToWord.count + index.numberOfDigits + estimatedChunkCount.numberOfDigits + 2
-            if chunkLength > maxChunkLength {
-                // The considered chunk is longer than the limit, should pick until the previous word
-                chunks.append("\(index)/%d \(currentChunk)")
-                currentChunk = ""
-                index += 1
-                continue
-            } else if chunkLength == maxChunkLength || i == wordCount - 1 {
-                // The consider chunk equals the limit or we get to the last word, pick it anyway
-                chunks.append("\(index)/%d \(currentChunkToWord)")
-                currentChunk = ""
-                index += 1
-            } else {
-                // It isn't long enough for a chunk to be splitted
-                if currentChunk.isEmpty {
-                    currentChunk = word
-                } else {
-                    currentChunk += " \(word)"
+            // Loop to the last word in message
+            for (index, word) in words.enumerated() {
+                if word.count >= self.maxChunkLength {
+                    realTotalMessages = 0
+                    indicatorLength = 0
+                    shouldBreakWhileLoop = true
+                    // The message contains too long word
+                    return .failure(MessageSplittingError.containsTooLongWord)
+                }
+                
+                // Compute the next trunks
+                if index > 0 {
+                    if messageLength + 1 + word.count <= self.maxChunkLength {
+                        // We still compute this trunk, go to next word
+                        messageLength = messageLength + 1 + word.count
+                    } else {
+                        messageLength = String(messageIndex).count + 1 + indicatorLength + 1 + word.count
+                        
+                        if messageLength > self.maxChunkLength {
+                            realTotalMessages = 0
+                            indicatorLength = 0
+                            shouldBreakWhileLoop = true
+                            // The message contains too long word
+                            return .failure(MessageSplittingError.containsTooLongWord)
+                        }
+                        
+                        // We finish one sentence, start to compute new sentence
+                        messageIndex = messageIndex + 1
+                        realTotalMessages = realTotalMessages + 1
+                    }
                 }
             }
             
-            i += 1
+            // Can not split, break and return fail
+            if shouldBreakWhileLoop == true {
+                break
+            }
+            
+            // Validate realTotalMessages with indicatorLength, start the validation process if the number of realTotalMessages is not valid
+            if realTotalMessages > 0 && String(realTotalMessages).count == indicatorLength {
+                isValidMessage = true
+            } else {
+                // Continue to loop to find the valid indicatorLength
+                totalMessages = totalMessages * 10
+                indicatorLength = indicatorLength + 1
+                realTotalMessages = 0
+                chunks.removeAll()
+            }
         }
         
-        // Let's do the final step, put the chunk count to each chunk
-        let chunkCount = chunks.count
-        chunks.enumerated().forEach { (index, chunk) in
-            chunks[index] = String(format: chunk, chunkCount)
+        // Split success, compute and print the output trunks
+        if isValidMessage == true {
+            var messageIndex: Int = 1
+            chunks.append("\(messageIndex)/\(realTotalMessages)")
+            
+            for (_, word) in words.enumerated() {
+                if chunks[chunks.count - 1].count + 1 + word.count <= self.maxChunkLength {
+                    let newMessage: String = "\(chunks[chunks.count - 1]) \(word)"
+                    chunks[chunks.count - 1] = newMessage
+                } else {
+                    messageIndex = messageIndex + 1
+                    let newMessage: String = "\(messageIndex)/\(realTotalMessages) \(word)"
+                    chunks.append(newMessage)
+                }
+            }
         }
         
         return .success(chunks)

@@ -92,8 +92,11 @@ class MessageSplitter: MessageSplittable {
                         // We still compute this trunk, go to next word
                         messageLength = messageLength + 1 + word.count
                     } else {
+                        // Increase message index and calculate message length
+                        messageIndex = messageIndex + 1
                         messageLength = String(messageIndex).count + 1 + indicatorLength + 1 + word.count
                         
+                        // Validate message length
                         if messageLength > self.maxChunkLength {
                             realTotalMessages = 0
                             indicatorLength = 0
@@ -103,7 +106,6 @@ class MessageSplitter: MessageSplittable {
                         }
                         
                         // We finish one sentence, start to compute new sentence
-                        messageIndex = messageIndex + 1
                         realTotalMessages = realTotalMessages + 1
                     }
                 }
